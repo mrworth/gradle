@@ -25,6 +25,7 @@ import org.gradle.internal.Cast;
 import org.gradle.process.ExecResult;
 import org.gradle.process.internal.ExecAction;
 import org.gradle.process.internal.ExecActionFactory;
+import org.gradle.util.GFileUtils;
 
 import java.io.File;
 
@@ -70,6 +71,10 @@ public class DefaultScmLifecycleHandler implements ScmLifecycleHandler {
         LOGGER.lifecycle("executing {}", action.getCommandLine());
         ExecResult result = action.execute();
         result.assertNormalExitValue();
+        File settingsFile = new File(destination, "settings.gradle");
+        if (!settingsFile.exists()) {
+            GFileUtils.touch(settingsFile);
+        }
         return new ScmCheckout(destination);
     }
 }
