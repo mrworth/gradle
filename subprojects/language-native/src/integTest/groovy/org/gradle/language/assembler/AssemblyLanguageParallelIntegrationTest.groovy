@@ -28,6 +28,10 @@ class AssemblyLanguageParallelIntegrationTest extends AbstractNativeSoftwareMode
         given:
         withComponentForApp()
         withTaskThatRunsParallelWith("assembleMainExecutableMainAsm")
+        buildFile << """
+            // prevent assembly and compile tasks from running in parallel
+            tasks.withType(CCompile) { mustRunAfter tasks.withType(Assemble) }
+        """
 
         when:
         succeeds("assemble", "parallelTask")
