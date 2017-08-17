@@ -16,10 +16,13 @@
 
 package org.gradle.initialization;
 
-import org.gradle.initialization.buildsrc.BuildSourceBuilder;
+import org.gradle.api.internal.file.delete.Deleter;
 import org.gradle.composite.internal.IncludedBuildFactory;
+import org.gradle.initialization.buildsrc.BuildSourceBuilder;
 import org.gradle.internal.composite.CompositeBuildSettingsLoader;
 import org.gradle.internal.composite.CompositeContextBuilder;
+import org.gradle.internal.sources.ScmBuildSettingsLoader;
+import org.gradle.process.internal.ExecActionFactory;
 
 public class DefaultSettingsLoaderFactory implements SettingsLoaderFactory {
     private final ISettingsFinder settingsFinder;
@@ -28,28 +31,34 @@ public class DefaultSettingsLoaderFactory implements SettingsLoaderFactory {
     private final BuildLoader buildLoader;
     private final CompositeContextBuilder compositeContextBuilder;
     private final IncludedBuildFactory includedBuildFactory;
+    private final ExecActionFactory execActionFactory;
+    private final Deleter deleter;
 
     public DefaultSettingsLoaderFactory(ISettingsFinder settingsFinder, SettingsProcessor settingsProcessor, BuildSourceBuilder buildSourceBuilder,
-                                        BuildLoader buildLoader, CompositeContextBuilder compositeContextBuilder, IncludedBuildFactory includedBuildFactory) {
+                                        BuildLoader buildLoader, CompositeContextBuilder compositeContextBuilder, IncludedBuildFactory includedBuildFactory, ExecActionFactory execActionFactory, Deleter deleter) {
         this.settingsFinder = settingsFinder;
         this.settingsProcessor = settingsProcessor;
         this.buildSourceBuilder = buildSourceBuilder;
         this.buildLoader = buildLoader;
         this.compositeContextBuilder = compositeContextBuilder;
         this.includedBuildFactory = includedBuildFactory;
+        this.execActionFactory = execActionFactory;
+        this.deleter = deleter;
     }
 
     @Override
     public SettingsLoader forTopLevelBuild() {
         return new NotifyingSettingsLoader(
             new CompositeBuildSettingsLoader(
-                new DefaultSettingsLoader(
-                    settingsFinder,
-                    settingsProcessor,
-                    buildSourceBuilder
-                ),
-                compositeContextBuilder, includedBuildFactory
-            ),
+                new ScmBuildSettingsLoader(
+                    new DefaultSettingsLoader(
+                        settingsFinder,
+                        settingsProcessor,
+                        buildSourceBuilder),
+                    execActionFactory,
+                    deleter),
+                compositeContextBuilder,
+                includedBuildFactory),
             buildLoader);
     }
 

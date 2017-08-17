@@ -37,6 +37,7 @@ import org.gradle.api.internal.component.DefaultComponentTypeRegistry;
 import org.gradle.api.internal.file.FileLookup;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.file.collections.DirectoryFileTreeFactory;
+import org.gradle.api.internal.file.delete.Deleter;
 import org.gradle.api.internal.initialization.DefaultScriptClassPathResolver;
 import org.gradle.api.internal.initialization.DefaultScriptHandlerFactory;
 import org.gradle.api.internal.initialization.ScriptClassPathInitializer;
@@ -149,6 +150,7 @@ import org.gradle.model.internal.inspect.ModelRuleSourceDetector;
 import org.gradle.plugin.repository.internal.PluginRepositoryFactory;
 import org.gradle.plugin.repository.internal.PluginRepositoryRegistry;
 import org.gradle.plugin.use.internal.PluginRequestApplicator;
+import org.gradle.process.internal.ExecActionFactory;
 import org.gradle.profile.ProfileEventAdapter;
 import org.gradle.profile.ProfileListener;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -300,7 +302,9 @@ public class BuildScopeServices extends DefaultServiceRegistry {
                                                                 CachedClasspathTransformer cachedClasspathTransformer,
                                                                 CachingServiceLocator cachingServiceLocator,
                                                                 CompositeContextBuilder compositeContextBuilder,
-                                                                IncludedBuildFactory includedBuildFactory) {
+                                                                IncludedBuildFactory includedBuildFactory,
+                                                                ExecActionFactory execActionFactory,
+                                                                FileLookup fileLookup) {
         return new DefaultSettingsLoaderFactory(
             new DefaultSettingsFinder(new BuildLayoutFactory()),
             settingsProcessor,
@@ -314,8 +318,11 @@ public class BuildScopeServices extends DefaultServiceRegistry {
                     PluginsProjectConfigureActions.of(
                         BuildSrcProjectConfigurationAction.class,
                         cachingServiceLocator))),
-            buildLoader, compositeContextBuilder, includedBuildFactory
-        );
+            buildLoader,
+            compositeContextBuilder,
+            includedBuildFactory,
+            execActionFactory,
+            new Deleter(fileLookup.getFileResolver(), fileLookup.getFileSystem()));
     }
 
     protected InitScriptHandler createInitScriptHandler(ScriptPluginFactory scriptPluginFactory, ScriptHandlerFactory scriptHandlerFactory, BuildOperationExecutor buildOperationExecutor) {

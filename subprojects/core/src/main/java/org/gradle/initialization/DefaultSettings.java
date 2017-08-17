@@ -23,6 +23,8 @@ import org.gradle.api.initialization.ConfigurableIncludedBuild;
 import org.gradle.api.initialization.IncludedBuild;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
+import org.gradle.api.initialization.sources.ScmBuildContainer;
+import org.gradle.api.initialization.sources.internal.DefaultScmBuildContainer;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.SettingsInternal;
 import org.gradle.api.internal.file.FileResolver;
@@ -38,6 +40,7 @@ import org.gradle.configuration.ScriptPluginFactory;
 import org.gradle.groovy.scripts.ScriptSource;
 import org.gradle.internal.Actions;
 import org.gradle.internal.Cast;
+import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.resource.TextResourceLoader;
 import org.gradle.internal.scripts.ScriptFileResolver;
 import org.gradle.internal.service.ServiceRegistry;
@@ -66,16 +69,18 @@ public class DefaultSettings extends AbstractPluginAware implements SettingsInte
     private final ClassLoaderScope buildRootClassLoaderScope;
     private final ServiceRegistry services;
     private final Map<File, ConfigurableIncludedBuild> includedBuilds = Maps.newLinkedHashMap();
+    private final ScmBuildContainer scmBuilds;
 
     public DefaultSettings(ServiceRegistryFactory serviceRegistryFactory, GradleInternal gradle,
                            ClassLoaderScope settingsClassLoaderScope, ClassLoaderScope buildRootClassLoaderScope, File settingsDir,
-                           ScriptSource settingsScript, StartParameter startParameter) {
+                           ScriptSource settingsScript, StartParameter startParameter, Instantiator instantiator) {
         this.gradle = gradle;
         this.buildRootClassLoaderScope = buildRootClassLoaderScope;
         this.settingsDir = settingsDir;
         this.settingsScript = settingsScript;
         this.startParameter = startParameter;
         this.settingsClassLoaderScope = settingsClassLoaderScope;
+        this.scmBuilds = instantiator.newInstance(DefaultScmBuildContainer.class, instantiator);
         services = serviceRegistryFactory.createFor(this);
         rootProjectDescriptor = createProjectDescriptor(null, settingsDir.getName(), settingsDir);
     }
@@ -271,6 +276,17 @@ public class DefaultSettings extends AbstractPluginAware implements SettingsInte
             includedBuilds.put(projectDir, build);
         }
         configuration.execute(build);
+    }
+
+    @Override
+    public void scmBuilds(Action<ScmBuildContainer> configuration) {
+        // TODO: Freeze configuration?
+        configuration.execute(scmBuilds);
+    }
+
+    @Override
+    public ScmBuildContainer getScmBuilds() {
+        return scmBuilds;
     }
 
     @Override

@@ -20,6 +20,7 @@ import org.gradle.StartParameter;
 import org.gradle.api.initialization.IncludedBuild;
 import org.gradle.api.initialization.ProjectDescriptor;
 import org.gradle.api.initialization.Settings;
+import org.gradle.api.initialization.sources.ScmBuildContainer;
 import org.gradle.api.internal.initialization.ClassLoaderScope;
 import org.gradle.api.internal.plugins.PluginAwareInternal;
 import org.gradle.api.internal.project.ProjectRegistry;
@@ -51,6 +52,9 @@ public interface SettingsInternal extends Settings, PluginAwareInternal {
     void setDefaultProject(ProjectDescriptor defaultProject);
 
     Map<File, IncludedBuild> getIncludedBuilds();
+
+    // TODO: This makes Kotlin DSL worse
+    ScmBuildContainer getScmBuilds();
 
     @Override
     GradleInternal getGradle();
