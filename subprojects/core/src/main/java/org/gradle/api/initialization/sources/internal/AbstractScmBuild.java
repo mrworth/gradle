@@ -16,10 +16,17 @@
 
 package org.gradle.api.initialization.sources.internal;
 
+import com.google.common.collect.Lists;
+import org.gradle.api.Action;
+import org.gradle.api.artifacts.DependencySubstitutions;
 import org.gradle.api.initialization.sources.ScmBuild;
+
+import java.util.Collection;
+import java.util.List;
 
 abstract class AbstractScmBuild implements ScmBuild {
     private final String name;
+    private final List<Action<? super DependencySubstitutions>> dependencySubstitutionActions = Lists.newArrayList();
 
     protected AbstractScmBuild(String name) {
         this.name = name;
@@ -28,5 +35,15 @@ abstract class AbstractScmBuild implements ScmBuild {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public void dependencySubstitution(Action<? super DependencySubstitutions> action) {
+        dependencySubstitutionActions.add(action);
+    }
+
+    @Override
+    public Collection<Action<? super DependencySubstitutions>> getSubstitutions() {
+        return dependencySubstitutionActions;
     }
 }

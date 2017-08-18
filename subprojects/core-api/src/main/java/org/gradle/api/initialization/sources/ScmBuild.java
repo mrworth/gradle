@@ -16,7 +16,13 @@
 
 package org.gradle.api.initialization.sources;
 
+import org.gradle.api.Action;
 import org.gradle.api.Named;
+import org.gradle.api.artifacts.DependencySubstitutions;
+
+import java.util.Collection;
 
 public interface ScmBuild extends Named {
+    void dependencySubstitution(Action<? super DependencySubstitutions> action);
+    Collection<Action<? super DependencySubstitutions>> getSubstitutions();
 }

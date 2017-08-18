@@ -16,6 +16,9 @@
 
 package org.gradle.internal.sources;
 
+import org.gradle.api.Action;
+import org.gradle.api.artifacts.DependencySubstitutions;
+import org.gradle.api.initialization.ConfigurableIncludedBuild;
 import org.gradle.api.initialization.sources.ScmBuild;
 import org.gradle.api.internal.GradleInternal;
 import org.gradle.api.internal.SettingsInternal;
@@ -36,9 +39,16 @@ public class ScmBuildSettingsLoader implements SettingsLoader {
     public SettingsInternal findAndLoadSettings(GradleInternal gradle) {
         SettingsInternal settings = delegate.findAndLoadSettings(gradle);
         // Go checkout SCM projects
-        for (ScmBuild scmBuild : settings.getScmBuilds()) {
+        for (final ScmBuild scmBuild : settings.getScmBuilds()) {
             ScmCheckout checkout = scmLifecycleHandler.initialize(gradle.getGradleUserHomeDir(), scmBuild);
-            settings.includeBuild(checkout.getWorkingDir());
+            settings.includeBuild(checkout.getWorkingDir(), new Action<ConfigurableIncludedBuild>() {
+                @Override
+                public void execute(ConfigurableIncludedBuild configurableIncludedBuild) {
+                    for (Action<? super DependencySubstitutions> action : scmBuild.getSubstitutions()) {
+                        configurableIncludedBuild.dependencySubstitution(action);
+                    }
+                }
+            });
         }
         return settings;
     }
