@@ -32,6 +32,8 @@ import org.gradle.api.internal.plugins.DefaultObjectConfigurationAction;
 import org.gradle.api.internal.plugins.PluginManagerInternal;
 import org.gradle.api.internal.project.AbstractPluginAware;
 import org.gradle.api.internal.project.ProjectRegistry;
+import org.gradle.api.vcs.SourceControl;
+import org.gradle.api.vcs.internal.SourceControlInternal;
 import org.gradle.caching.configuration.BuildCacheConfiguration;
 import org.gradle.composite.internal.IncludedBuildFactory;
 import org.gradle.configuration.ScriptPluginFactory;
@@ -283,8 +285,8 @@ public class DefaultSettings extends AbstractPluginAware implements SettingsInte
         action.execute(getBuildCache());
     }
 
-    @Inject
     @Override
+    @Inject
     public BuildCacheConfiguration getBuildCache() {
         throw new UnsupportedOperationException();
     }
@@ -297,6 +299,17 @@ public class DefaultSettings extends AbstractPluginAware implements SettingsInte
     @Override
     @Inject
     public PluginManagementSpec getPluginManagement() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void sourceControl(Action<? super SourceControl> configuration) {
+        configuration.execute(getSourceControl());
+    }
+
+    @Override
+    @Inject
+    public SourceControlInternal getSourceControl() {
         throw new UnsupportedOperationException();
     }
 }
