@@ -35,6 +35,7 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.os.OperatingSystem;
+import org.gradle.internal.work.WorkerLeaseService;
 import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.Gcc;
 import org.gradle.platform.base.ToolChain;
@@ -184,11 +185,16 @@ public class InstallExecutable extends DefaultTask {
 
     @TaskAction
     public void install() {
-        if (platform.getOperatingSystem().isWindows()) {
-            installWindows();
-        } else {
-            installUnix();
-        }
+        getServices().get(WorkerLeaseService.class).withoutProjectLock(new Runnable() {
+            @Override
+            public void run() {
+                if (platform.getOperatingSystem().isWindows()) {
+                    installWindows();
+                } else {
+                    installUnix();
+                }
+            }
+        });
     }
 
     private void installWindows() {

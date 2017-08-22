@@ -27,7 +27,7 @@ class AssemblyLanguageParallelIntegrationTest extends AbstractNativeSoftwareMode
     def "can execute assembler tasks in parallel"() {
         given:
         withComponentForApp()
-        withTaskThatRunsParallelWith("assembleMainExecutableMainAsm")
+        withTaskThatRunsParallelUsingToolchainWith("assembleMainExecutableMainAsm")
         buildFile << """
             // prevent assembly and compile tasks from running in parallel
             tasks.withType(CCompile) { mustRunAfter tasks.withType(Assemble) }
