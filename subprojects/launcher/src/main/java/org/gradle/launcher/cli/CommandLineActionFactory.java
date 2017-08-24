@@ -18,6 +18,7 @@ package org.gradle.launcher.cli;
 import groovy.lang.GroovySystem;
 import org.apache.tools.ant.Main;
 import org.gradle.api.Action;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.internal.file.IdentityFileResolver;
 import org.gradle.api.logging.configuration.LoggingConfiguration;
 import org.gradle.cli.CommandLineArgumentException;
@@ -135,6 +136,9 @@ public class CommandLineActionFactory {
         }
 
         public void execute(ExecutionListener executionListener) {
+            if (!JavaVersion.current().isJava8Compatible()) {
+                System.out.println("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0");
+            }
             System.err.println();
             System.err.println(e.getMessage());
             showUsage(System.err, parser);

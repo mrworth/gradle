@@ -56,6 +56,7 @@ import org.gradle.tooling.internal.provider.connection.ProviderBuildResult;
 import org.gradle.tooling.internal.provider.connection.ProviderConnectionParameters;
 import org.gradle.tooling.internal.provider.connection.ProviderOperationParameters;
 import org.gradle.tooling.internal.provider.test.ProviderInternalTestExecutionRequest;
+import org.gradle.util.DeprecationLogger;
 import org.gradle.util.GradleVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -239,6 +240,11 @@ public class DefaultConnection implements ConnectionVersion4, InternalConnection
         if (!supportedConsumerVersion) {
             throw unsupportedConnectionException();
         }
+
+        if (!JavaVersion.current().isJava8Compatible()) {
+            DeprecationLogger.nagUserWith("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0");
+        }
+
         return adapter.builder(ProviderOperationParameters.class).mixInTo(ProviderOperationParameters.class, BuildLogLevelMixIn.class).build(buildParameters);
     }
 }

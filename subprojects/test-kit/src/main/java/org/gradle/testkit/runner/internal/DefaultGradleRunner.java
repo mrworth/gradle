@@ -18,13 +18,18 @@ package org.gradle.testkit.runner.internal;
 
 import org.apache.commons.io.output.WriterOutputStream;
 import org.gradle.api.Action;
+import org.gradle.api.JavaVersion;
 import org.gradle.internal.SystemProperties;
 import org.gradle.internal.classloader.ClasspathUtil;
 import org.gradle.internal.classpath.ClassPath;
 import org.gradle.internal.classpath.DefaultClassPath;
 import org.gradle.internal.installation.CurrentGradleInstallation;
 import org.gradle.internal.installation.GradleInstallation;
-import org.gradle.testkit.runner.*;
+import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.GradleRunner;
+import org.gradle.testkit.runner.InvalidRunnerConfigurationException;
+import org.gradle.testkit.runner.UnexpectedBuildFailure;
+import org.gradle.testkit.runner.UnexpectedBuildSuccess;
 import org.gradle.testkit.runner.internal.io.SynchronizedOutputStream;
 
 import java.io.File;
@@ -32,7 +37,11 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class DefaultGradleRunner extends GradleRunner {
 
@@ -60,6 +69,10 @@ public class DefaultGradleRunner extends GradleRunner {
         this.gradleExecutor = gradleExecutor;
         this.testKitDirProvider = testKitDirProvider;
         this.debug = Boolean.getBoolean(DEBUG_SYS_PROP);
+
+        if (!JavaVersion.current().isJava8Compatible()) {
+            System.out.println("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0");
+        }
     }
 
     private static TestKitDirProvider calculateTestKitDirProvider(SystemProperties systemProperties) {

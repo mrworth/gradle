@@ -23,6 +23,7 @@ import com.google.common.io.CharSource;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.gradle.api.Action;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.Transformer;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.api.internal.ClosureBackedAction;
@@ -87,6 +88,20 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
     private static final String DEBUG_SYSPROP = "org.gradle.integtest.debug";
     private static final String LAUNCHER_DEBUG_SYSPROP = "org.gradle.integtest.launcher.debug";
     private static final String PROFILE_SYSPROP = "org.gradle.integtest.profile";
+
+    private static final List<String> LOW_LEVELS = Arrays.asList(
+        "--info",
+        "--debug",
+        "--warn",
+        "-Dorg.gradle.logging.level=lifecycle",
+        "-Dorg.gradle.logging.level=info",
+        "-Dorg.gradle.logging.level=debug",
+        "-Dorg.gradle.logging.level=warn");
+
+    private static final List<String> HIGH_LEVELS = Arrays.asList(
+        "-q",
+        "--quiet",
+        "-Dorg.gradle.logging.level=quiet");
 
     protected static final List<String> DEBUG_ARGS = ImmutableList.of(
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
@@ -932,6 +947,16 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
         }
     }
 
+    protected boolean java7DeprecationWarningShouldExist() {
+        if (org.apache.commons.collections.CollectionUtils.containsAny(args, LOW_LEVELS)) {
+            return JavaVersion.current().isJava7();
+        }
+        if (org.apache.commons.collections.CollectionUtils.containsAny(args, HIGH_LEVELS)) {
+            return false;
+        }
+        return JavaVersion.current().isJava7();
+    }
+
     protected void finished() {
         try {
             afterExecute.execute(this);
@@ -1061,9 +1086,18 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
                     if (line.matches(".*use(s)? or override(s)? a deprecated API\\.")) {
                         // A javac warning, ignore
                         i++;
+                    } else if (line.contains("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0")) {
+                        if (!java7DeprecationWarningShouldExist()) {
+                            throw new AssertionError(String.format("%s line %d contains unexpected deprecation warning: %s%n=====%n%s%n=====%n", displayName, i + 1, line, output));
+                        }
+                        // skip over stack trace
+                        i++;
+                        while (i < lines.size() && STACK_TRACE_ELEMENT.matcher(lines.get(i)).matches()) {
+                            i++;
+                        }
                     } else if (line.matches(".*\\s+deprecated.*")) {
                         if (checkDeprecations && expectedDeprecationWarnings <= 0) {
-                            throw new AssertionError(String.format("%s line %d contains a deprecation warning: %s%n=====%n%s%n=====%n", displayName, i+1, line, output));
+                            throw new AssertionError(String.format("%s line %d contains a deprecation warning: %s%n=====%n%s%n=====%n", displayName, i + 1, line, output));
                         }
                         expectedDeprecationWarnings--;
                         // skip over stack trace
@@ -1071,9 +1105,9 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
                         while (i < lines.size() && STACK_TRACE_ELEMENT.matcher(lines.get(i)).matches()) {
                             i++;
                         }
-                    } else if (!expectStackTraces && STACK_TRACE_ELEMENT.matcher(line).matches() && i < lines.size()-1 && STACK_TRACE_ELEMENT.matcher(lines.get(i+1)).matches()) {
+                    } else if (!expectStackTraces && STACK_TRACE_ELEMENT.matcher(line).matches() && i < lines.size() - 1 && STACK_TRACE_ELEMENT.matcher(lines.get(i + 1)).matches()) {
                         // 2 or more lines that look like stack trace elements
-                        throw new AssertionError(String.format("%s line %d contains an unexpected stack trace: %s%n=====%n%s%n=====%n", displayName, i+1, line, output));
+                        throw new AssertionError(String.format("%s line %d contains an unexpected stack trace: %s%n=====%n%s%n=====%n", displayName, i + 1, line, output));
                     } else {
                         i++;
                     }

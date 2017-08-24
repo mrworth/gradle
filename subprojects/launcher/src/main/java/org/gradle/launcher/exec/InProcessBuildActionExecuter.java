@@ -16,6 +16,7 @@
 
 package org.gradle.launcher.exec;
 
+import org.gradle.api.JavaVersion;
 import org.gradle.initialization.BuildRequestContext;
 import org.gradle.initialization.GradleLauncher;
 import org.gradle.initialization.GradleLauncherFactory;
@@ -25,6 +26,9 @@ import org.gradle.internal.invocation.BuildAction;
 import org.gradle.internal.invocation.BuildActionRunner;
 import org.gradle.internal.invocation.GradleBuildController;
 import org.gradle.internal.service.ServiceRegistry;
+
+import static org.gradle.api.logging.LogLevel.ERROR;
+import static org.gradle.api.logging.LogLevel.QUIET;
 
 public class InProcessBuildActionExecuter implements BuildActionExecuter<BuildActionParameters> {
     private final GradleLauncherFactory gradleLauncherFactory;
@@ -42,6 +46,9 @@ public class InProcessBuildActionExecuter implements BuildActionExecuter<BuildAc
             RootBuildLifecycleListener buildLifecycleListener = contextServices.get(ListenerManager.class).getBroadcaster(RootBuildLifecycleListener.class);
             buildLifecycleListener.afterStart();
             try {
+                if (!JavaVersion.current().isJava8Compatible() && (actionParameters.getLogLevel() != QUIET && actionParameters.getLogLevel() != ERROR)) {
+                    System.out.println("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0");
+                }
                 buildActionRunner.run(action, buildController);
                 return buildController.getResult();
             } finally {

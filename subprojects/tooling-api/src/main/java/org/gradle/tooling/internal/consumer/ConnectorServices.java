@@ -29,6 +29,7 @@ import org.gradle.tooling.internal.consumer.loader.CachingToolingImplementationL
 import org.gradle.tooling.internal.consumer.loader.DefaultToolingImplementationLoader;
 import org.gradle.tooling.internal.consumer.loader.SynchronizedToolingImplementationLoader;
 import org.gradle.tooling.internal.consumer.loader.ToolingImplementationLoader;
+import org.gradle.util.DeprecationLogger;
 
 public class ConnectorServices {
     private static DefaultServiceRegistry singletonRegistry = new ConnectorServiceRegistry();
@@ -57,6 +58,9 @@ public class ConnectorServices {
 
     private static void checkJavaVersion() {
         UnsupportedJavaRuntimeException.assertUsingVersion("Gradle Tooling API", JavaVersion.VERSION_1_7);
+        if (!JavaVersion.current().isJava8Compatible()) {
+            DeprecationLogger.nagUserWith("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0");
+        }
     }
 
     private static class ConnectorServiceRegistry extends DefaultServiceRegistry {

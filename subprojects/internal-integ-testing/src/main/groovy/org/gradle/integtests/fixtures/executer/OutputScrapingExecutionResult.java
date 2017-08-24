@@ -100,6 +100,9 @@ public class OutputScrapingExecutionResult implements ExecutionResult {
             } else if (line.contains(LowTenuredSpaceDaemonExpirationStrategy.EXPIRE_DAEMON_MESSAGE)) {
                 // Remove the "Expiring Daemon" message
                 i++;
+            } else if (line.contains("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0")) {
+                // Remove the Java 7 deprecation warning. This should be remove after 5.0
+                i++;
             } else if (i == lines.size() - 1 && BUILD_RESULT_PATTERN.matcher(line).matches()) {
                 result.append(BUILD_RESULT_PATTERN.matcher(line).replaceFirst("BUILD $1 in 0s"));
                 result.append('\n');

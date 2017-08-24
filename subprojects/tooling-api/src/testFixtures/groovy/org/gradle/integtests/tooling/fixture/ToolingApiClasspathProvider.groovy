@@ -54,6 +54,7 @@ trait ToolingApiClasspathProvider {
         sharedSpec.allowPackage('junit.framework')
         sharedSpec.allowPackage('groovy')
         sharedSpec.allowPackage('org.codehaus.groovy')
+        sharedSpec.allowPackage('org.apache.commons')
         sharedSpec.allowPackage('spock')
         sharedSpec.allowPackage('org.spockframework')
         sharedSpec.allowClass(SetSystemProperties)
