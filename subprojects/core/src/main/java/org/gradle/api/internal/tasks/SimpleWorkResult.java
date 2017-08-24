@@ -16,14 +16,26 @@
 package org.gradle.api.internal.tasks;
 
 import org.gradle.api.tasks.WorkResult;
+import org.gradle.util.DeprecationLogger;
 
 public class SimpleWorkResult implements WorkResult {
+
     private final boolean didWork;
 
+    public static WorkResult didWork(boolean didWork) {
+        return didWork ? DID_WORK : DID_NO_WORK;
+    }
+
+    /**
+     * @deprecated Use {@link WorkResult#DID_WORK} and {@link WorkResult#DID_NO_WORK} instead.
+     */
+    @Deprecated
     public SimpleWorkResult(boolean didWork) {
+        DeprecationLogger.nagUserOfDiscontinuedApi("SimpleWorkResult type", "Please use WorkResult.DID_WORK and DID_NO_WORK instead.");
         this.didWork = didWork;
     }
 
+    @Override
     public boolean getDidWork() {
         return didWork;
     }
