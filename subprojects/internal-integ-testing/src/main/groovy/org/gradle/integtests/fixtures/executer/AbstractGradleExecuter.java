@@ -36,6 +36,7 @@ import org.gradle.internal.MutableActionSet;
 import org.gradle.internal.UncheckedException;
 import org.gradle.internal.featurelifecycle.LoggingDeprecatedFeatureHandler;
 import org.gradle.internal.jvm.Jvm;
+import org.gradle.internal.jvm.UnsupportedJavaRuntimeException;
 import org.gradle.internal.logging.services.LoggingServiceRegistry;
 import org.gradle.internal.nativeintegration.services.NativeServices;
 import org.gradle.internal.service.ServiceRegistry;
@@ -48,6 +49,7 @@ import org.gradle.test.fixtures.file.TestDirectoryProvider;
 import org.gradle.test.fixtures.file.TestFile;
 import org.gradle.testfixtures.internal.NativeServicesTestFixture;
 import org.gradle.util.CollectionUtils;
+import org.gradle.util.GUtil;
 import org.gradle.util.GradleVersion;
 
 import java.io.File;
@@ -64,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.gradle.integtests.fixtures.executer.AbstractGradleExecuter.CliDaemonArgument.*;
@@ -80,6 +83,7 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
         .provider(new GlobalScopeServices(true))
         .build();
     protected final static Set<String> PROPAGATED_SYSTEM_PROPERTIES = Sets.newHashSet();
+    private static final List<String> JDK7_PATHS = Arrays.asList("1.7", "jdk7", "-7-");
 
     public static void propagateSystemProperty(String name) {
         PROPAGATED_SYSTEM_PROPERTIES.add(name);
@@ -947,15 +951,47 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
         }
     }
 
-    protected boolean java7DeprecationWarningShouldExist() {
+    private boolean java7DeprecationWarningShouldExist() {
         if (org.apache.commons.collections.CollectionUtils.containsAny(args, LOW_LEVELS)) {
-            return JavaVersion.current().isJava7();
+            return currentOrTargetIsJava7();
         }
         if (org.apache.commons.collections.CollectionUtils.containsAny(args, HIGH_LEVELS)) {
             return false;
         }
-        return JavaVersion.current().isJava7();
+        return currentOrTargetIsJava7();
     }
+
+    private boolean currentOrTargetIsJava7() {
+        String javaHomeInProperties = javaHomeInProperties();
+        if (javaHomeInProperties != null) {
+            return isJava7Home(javaHomeInProperties);
+        } else if (getJavaHome().equals(Jvm.current().getJavaHome())) {
+            return JavaVersion.current().isJava7();
+        } else {
+            return isJava7Home(getJavaHome().toString());
+        }
+    }
+
+    private String javaHomeInProperties() {
+        File gradleProperties = new File(getWorkingDir(), "gradle.properties");
+        if (gradleProperties.isFile()) {
+            Properties properties = GUtil.loadProperties(gradleProperties);
+            if (properties.getProperty("org.gradle.java.home") != null) {
+                return properties.getProperty("org.gradle.java.home");
+            }
+        }
+        return null;
+    }
+
+    private boolean isJava7Home(String path){
+        for(String jdk7Path: JDK7_PATHS){
+            if(path.contains(jdk7Path)){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     protected void finished() {
         try {
@@ -1086,7 +1122,7 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
                     if (line.matches(".*use(s)? or override(s)? a deprecated API\\.")) {
                         // A javac warning, ignore
                         i++;
-                    } else if (line.contains("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0")) {
+                    } else if (line.contains(UnsupportedJavaRuntimeException.JAVA7_DEPRECATION_WARNING)) {
                         if (!java7DeprecationWarningShouldExist()) {
                             throw new AssertionError(String.format("%s line %d contains unexpected deprecation warning: %s%n=====%n%s%n=====%n", displayName, i + 1, line, output));
                         }

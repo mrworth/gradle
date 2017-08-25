@@ -17,6 +17,7 @@
 package org.gradle.testkit.runner
 
 import org.gradle.integtests.fixtures.AvailableJavaHomes
+import org.gradle.internal.jvm.UnsupportedJavaRuntimeException
 import org.gradle.testkit.runner.fixtures.NoDebug
 import org.gradle.testkit.runner.fixtures.NonCrossVersion
 import spock.lang.IgnoreIf
@@ -34,6 +35,6 @@ class GradleRunnerDeprecatedBuildJvmIntegrationTest extends BaseGradleRunnerInte
         def result = runner().build()
 
         then:
-        result.output.count("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0") == 1
+        result.output.count(UnsupportedJavaRuntimeException.JAVA7_DEPRECATION_WARNING) == 1
     }
 }

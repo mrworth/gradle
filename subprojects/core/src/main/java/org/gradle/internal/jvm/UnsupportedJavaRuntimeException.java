@@ -18,15 +18,26 @@ package org.gradle.internal.jvm;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
+import org.gradle.util.DeprecationLogger;
 import org.gradle.util.GradleVersion;
 
 public class UnsupportedJavaRuntimeException extends GradleException {
+    public static final String JAVA7_DEPRECATION_WARNING = "Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0. "
+        + "Please see https://docs.gradle.org/current/userguide/java_plugin.html#sec:java_cross_compilation for more details.";
+
     public UnsupportedJavaRuntimeException(String message) {
         super(message);
     }
 
+    private static void java7DeprecationWarning(JavaVersion version) {
+        if (!version.isJava8Compatible()) {
+            DeprecationLogger.nagUserWith(JAVA7_DEPRECATION_WARNING);
+        }
+    }
+
     public static void assertUsingVersion(String component, JavaVersion minVersion) throws UnsupportedJavaRuntimeException {
         JavaVersion current = JavaVersion.current();
+        java7DeprecationWarning(current);
         if (current.compareTo(minVersion) >= 0) {
             return;
         }
@@ -35,10 +46,11 @@ public class UnsupportedJavaRuntimeException extends GradleException {
     }
 
     public static void assertUsingVersion(String component, JavaVersion minVersion, JavaVersion configuredVersion) throws UnsupportedJavaRuntimeException {
+        java7DeprecationWarning(configuredVersion);
         if (configuredVersion.compareTo(minVersion) >= 0) {
             return;
         }
         throw new UnsupportedJavaRuntimeException(String.format("%s %s requires Java %s or later to run. Your build is currently configured to use Java %s.", component, GradleVersion.current().getVersion(),
-                minVersion.getMajorVersion(), configuredVersion.getMajorVersion()));
+            minVersion.getMajorVersion(), configuredVersion.getMajorVersion()));
     }
 }

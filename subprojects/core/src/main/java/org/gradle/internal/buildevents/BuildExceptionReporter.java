@@ -18,7 +18,6 @@ package org.gradle.internal.buildevents;
 import org.gradle.BuildAdapter;
 import org.gradle.BuildResult;
 import org.gradle.api.Action;
-import org.gradle.api.JavaVersion;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.configuration.LoggingConfiguration;
 import org.gradle.api.logging.configuration.ShowStacktrace;
@@ -66,9 +65,6 @@ public class BuildExceptionReporter extends BuildAdapter implements Action<Throw
     }
 
     public void execute(Throwable failure) {
-        if (!JavaVersion.current().isJava8Compatible()) {
-            System.out.println("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0");
-        }
         if (failure instanceof MultipleBuildFailures) {
             renderMultipleBuildExceptions((MultipleBuildFailures) failure);
             return;

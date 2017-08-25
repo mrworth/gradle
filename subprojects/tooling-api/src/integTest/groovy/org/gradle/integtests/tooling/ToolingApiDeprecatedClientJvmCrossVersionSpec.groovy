@@ -23,6 +23,7 @@ import org.gradle.integtests.fixtures.ScriptExecuter
 import org.gradle.integtests.tooling.fixture.TargetGradleVersion
 import org.gradle.integtests.tooling.fixture.ToolingApiSpecification
 import org.gradle.integtests.tooling.fixture.ToolingApiVersion
+import org.gradle.internal.jvm.UnsupportedJavaRuntimeException
 import org.gradle.util.GradleVersion
 import spock.lang.IgnoreIf
 
@@ -72,7 +73,7 @@ public class TestClient {
         def out = runScript()
 
         then:
-        StringUtils.countMatches(out, "Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0") == 1
+        StringUtils.countMatches(out, UnsupportedJavaRuntimeException.JAVA7_DEPRECATION_WARNING)
     }
 
     String runScript() {

@@ -17,10 +17,11 @@
 package org.gradle.integtests
 
 import org.gradle.integtests.fixtures.AvailableJavaHomes
+import org.gradle.internal.jvm.UnsupportedJavaRuntimeException
 import spock.lang.IgnoreIf
 
-@IgnoreIf({ AvailableJavaHomes.jdk7 == null })
 class WrapperDeprecatedBuildJvmIntegrationTest extends AbstractWrapperIntegrationSpec {
+    @IgnoreIf({ AvailableJavaHomes.jdk7 == null })
     def "warns of deprecated java version when running under java 7"() {
         def jdk = AvailableJavaHomes.jdk7
 
@@ -30,6 +31,19 @@ class WrapperDeprecatedBuildJvmIntegrationTest extends AbstractWrapperIntegratio
 
         expect:
         def result = wrapperExecuter.withTasks("help").run()
-        result.output.count("Support for running Gradle using Java 7 has been deprecated and is scheduled to be removed in Gradle 5.0")
+        result.output.count(UnsupportedJavaRuntimeException.JAVA7_DEPRECATION_WARNING) == 1
+    }
+
+    @IgnoreIf({ AvailableJavaHomes.jdk8 == null })
+    def "no warns of deprecated java version when running under java 8"() {
+        def jdk = AvailableJavaHomes.jdk8
+
+        given:
+        prepareWrapper()
+        wrapperExecuter.withJavaHome(jdk.javaHome)
+
+        expect:
+        def result = wrapperExecuter.withTasks("help").run()
+        result.output.count(UnsupportedJavaRuntimeException.JAVA7_DEPRECATION_WARNING) == 0
     }
 }

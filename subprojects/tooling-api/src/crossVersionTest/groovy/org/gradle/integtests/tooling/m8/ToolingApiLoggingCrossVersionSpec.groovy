@@ -140,7 +140,7 @@ project.logger.debug("debug logging");
     String normaliseOutput(String output) {
         // Must replace both build result formats for cross compat
         return output
-            .replaceFirst(" in .+s", " in 0s")
+            .replaceFirst(/ in [.\d]+s/, " in 0s")
             .replaceFirst("Total time: .+ secs", "Total time: 0 secs")
     }
 
