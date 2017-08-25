@@ -16,8 +16,17 @@
 
 package org.gradle.internal.hash;
 
-import com.google.common.hash.Hasher;
-import org.gradle.internal.Factory;
-
-public interface FileContentHasherFactory extends Factory<Hasher> {
+public interface Hasher {
+    void putBytes(byte[] bytes);
+    void putBytes(byte[] bytes, int off, int len);
+    void putByte(byte value);
+    void putShort(short value);
+    void putInt(int value);
+    void putLong(long value);
+    void putFloat(float value);
+    void putDouble(double value);
+    void putBoolean(boolean value);
+    void putChar(char value);
+    void putString(CharSequence value);
+    HashCode hash();
 }

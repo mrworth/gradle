@@ -21,7 +21,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.hash.HashCode;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -30,6 +29,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tools.zip.UnixStat;
 import org.gradle.api.GradleException;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.file.RelativePath;
 import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.api.internal.changedetection.state.DirectoryFileSnapshot;
@@ -37,6 +37,7 @@ import org.gradle.api.internal.changedetection.state.FileContentSnapshot;
 import org.gradle.api.internal.changedetection.state.FileHashSnapshot;
 import org.gradle.api.internal.changedetection.state.FileSnapshot;
 import org.gradle.api.internal.changedetection.state.RegularFileSnapshot;
+import org.gradle.api.internal.file.collections.DefaultDirectoryWalkerFactory;
 import org.gradle.api.internal.tasks.CacheableTaskOutputFilePropertySpec;
 import org.gradle.api.internal.tasks.CacheableTaskOutputFilePropertySpec.OutputType;
 import org.gradle.api.internal.tasks.ResolvedTaskOutputFilePropertySpec;
@@ -44,7 +45,8 @@ import org.gradle.api.internal.tasks.TaskFilePropertySpec;
 import org.gradle.caching.internal.tasks.origin.TaskOutputOriginMetadata;
 import org.gradle.caching.internal.tasks.origin.TaskOutputOriginReader;
 import org.gradle.caching.internal.tasks.origin.TaskOutputOriginWriter;
-import org.gradle.internal.hash.FileHasher;
+import org.gradle.internal.hash.HashCode;
+import org.gradle.internal.hash.StreamHasher;
 import org.gradle.internal.nativeplatform.filesystem.FileSystem;
 
 import java.io.BufferedOutputStream;
@@ -82,12 +84,12 @@ public class TarTaskOutputPacker implements TaskOutputPacker {
     };
 
     private final FileSystem fileSystem;
-    private final FileHasher fileHasher;
+    private final StreamHasher streamHasher;
     private final StringInterner stringInterner;
 
-    public TarTaskOutputPacker(FileSystem fileSystem, FileHasher fileHasher, StringInterner stringInterner) {
+    public TarTaskOutputPacker(FileSystem fileSystem, StreamHasher streamHasher, StringInterner stringInterner) {
         this.fileSystem = fileSystem;
-        this.fileHasher = fileHasher;
+        this.streamHasher = streamHasher;
         this.stringInterner = stringInterner;
     }
 
@@ -334,7 +336,7 @@ public class TarTaskOutputPacker implements TaskOutputPacker {
             OutputStream output = new FileOutputStream(outputFile);
             HashCode hash;
             try {
-                hash = fileHasher.hashCopy(input, output);
+                hash = streamHasher.hashCopy(input, output);
             } finally {
                 IOUtils.closeQuietly(output);
             }

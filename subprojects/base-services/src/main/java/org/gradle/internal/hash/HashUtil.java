@@ -15,7 +15,6 @@
  */
 package org.gradle.internal.hash;
 
-import com.google.common.hash.HashCode;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.internal.UncheckedException;
 
@@ -81,7 +80,7 @@ public class HashUtil {
     }
 
     public static String compactStringFor(HashCode hashCode) {
-        return compactStringFor(hashCode.asBytes());
+        return compactStringFor(hashCode.toByteArray());
     }
 
     public static String compactStringFor(byte[] digest) {
@@ -113,7 +112,7 @@ public class HashUtil {
     }
 
     public static int compareHashCodes(HashCode a, HashCode b) {
-        return compareHashCodes(a.asBytes(), b.asBytes());
+        return compareHashCodes(a.toByteArray(), b.toByteArray());
     }
 
     public static int compareHashCodes(byte[] a, byte[] b) {

@@ -16,7 +16,6 @@
 
 package org.gradle.test.fixtures.file;
 
-import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -25,6 +24,7 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.gradle.api.UncheckedIOException;
+import org.gradle.internal.hash.Hashing;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.nativeintegration.services.NativeServices;
 import org.gradle.testing.internal.util.RetryUtil;
@@ -419,7 +419,7 @@ public class TestFile extends File {
 
     public String getMd5Hash() {
         try {
-            return Files.hash(this, Hashing.md5()).toString();
+            return Hashing.md5().hashBytes(Files.toByteArray(this)).toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
