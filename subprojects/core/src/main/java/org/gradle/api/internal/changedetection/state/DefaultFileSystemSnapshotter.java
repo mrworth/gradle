@@ -281,18 +281,21 @@ public class DefaultFileSystemSnapshotter implements FileSystemSnapshotter, Clos
         private void synchronousSnapshot() {
             buffer[0].run();
             buffer[0] = null;
+            bufferSize = 0;
         }
 
         private void submitForConcurrentExecution() {
             final Runnable[] tasks = buffer.clone();
-            for (int i=0; i<BATCH_SIZE; i++) {
+            final int len = bufferSize;
+            for (int i=0; i<bufferSize; i++) {
                 buffer[i] = null;
             }
+            bufferSize = 0;
             buildOperationExecutor.run(new RunnableBuildOperation() {
                 @Override
                 public void run(BuildOperationContext context) {
-                    for (Runnable task : tasks) {
-                        task.run();
+                    for (int i = 0; i < len; i++) {
+                        tasks[i].run();
                     }
                 }
 
