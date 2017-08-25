@@ -29,7 +29,7 @@ class DefaultFileSystemSnapshotterTest extends Specification {
     @Rule TestNameTestDirectoryProvider tmpDir = new TestNameTestDirectoryProvider()
     def fileHasher = new TestFileHasher()
     def fileSystemMirror = new DefaultFileSystemMirror([])
-    def snapshotter = new DefaultFileSystemSnapshotter(fileHasher, new StringInterner(), TestFiles.fileSystem(), TestFiles.directoryFileTreeFactory(), fileSystemMirror)
+    def snapshotter = new DefaultFileSystemSnapshotter(fileHasher, new StringInterner(), TestFiles.fileSystem(), TestFiles.directoryFileTreeFactory(), fileSystemMirror, buildOperationExecutor)
 
     def "fetches details of a file and caches the result"() {
         def f = tmpDir.createFile("f")

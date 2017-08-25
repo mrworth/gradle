@@ -44,7 +44,7 @@ class DefaultClasspathSnapshotterTest extends Specification {
     def directoryFileTreeFactory = TestFiles.directoryFileTreeFactory()
     def fileSystemMirror = new DefaultFileSystemMirror([])
     def fileHasher = new TestFileHasher()
-    def fileSystemSnapshotter = new DefaultFileSystemSnapshotter(fileHasher, stringInterner, fileSystem, directoryFileTreeFactory, fileSystemMirror)
+    def fileSystemSnapshotter = new DefaultFileSystemSnapshotter(fileHasher, stringInterner, fileSystem, directoryFileTreeFactory, fileSystemMirror, buildOperationExecutor)
     InMemoryIndexedCache<HashCode, HashCode> resourceHashesCache = new InMemoryIndexedCache<>(new HashCodeSerializer())
     def cacheService = new ResourceSnapshotterCacheService(resourceHashesCache)
     def snapshotter = new DefaultClasspathSnapshotter(
