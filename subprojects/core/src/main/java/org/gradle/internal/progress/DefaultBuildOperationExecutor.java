@@ -58,6 +58,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 //TODO move to base-services once the ProgressLogger dependency is removed
 public class DefaultBuildOperationExecutor implements BuildOperationExecutor, Stoppable, ParallelismConfigurationListener {
@@ -74,6 +76,8 @@ public class DefaultBuildOperationExecutor implements BuildOperationExecutor, St
     private final BuildOperationIdFactory buildOperationIdFactory;
 
     private final ThreadLocal<DefaultBuildOperationState> currentOperation = new ThreadLocal<DefaultBuildOperationState>();
+
+    private final Lock notificationLock = new ReentrantLock();
 
     public DefaultBuildOperationExecutor(BuildOperationListener listener, TimeProvider timeProvider, ProgressLoggerFactory progressLoggerFactory,
                                          BuildOperationQueueFactory buildOperationQueueFactory, ExecutorFactory executorFactory,
@@ -178,17 +182,29 @@ public class DefaultBuildOperationExecutor implements BuildOperationExecutor, St
         }
 
         BuildOperationDescriptor descriptor = createDescriptor(descriptorBuilder, parent);
-        DefaultBuildOperationState currentOperation = new DefaultBuildOperationState(descriptor, timeProvider.getCurrentTime());
 
-        assertParentRunning("Cannot start operation (%s) as parent operation (%s) has already completed.", descriptor, parent);
-
-        currentOperation.setRunning(true);
-
-        DefaultBuildOperationState operationBefore = this.currentOperation.get();
-        this.currentOperation.set(currentOperation);
-        BuildOperationIdentifierRegistry.setCurrentOperationIdentifier(this.currentOperation.get().getId());
+        DefaultBuildOperationState operationBefore;
+        DefaultBuildOperationState currentOperation;
         try {
-            listener.started(descriptor, new OperationStartEvent(currentOperation.getStartTime()));
+            notificationLock.lock();
+            long startedTime = timeProvider.getCurrentTime();
+            currentOperation = new DefaultBuildOperationState(descriptor, startedTime);
+            assertParentRunning("Cannot start operation (%s) as parent operation (%s) has already completed.", descriptor, parent);
+            currentOperation.setRunning(true);
+            operationBefore = this.currentOperation.get();
+            this.currentOperation.set(currentOperation);
+            BuildOperationIdentifierRegistry.setCurrentOperationIdentifier(this.currentOperation.get().getId());
+        } catch (RuntimeException any) {
+            notificationLock.unlock();
+            throw any;
+        }
+
+        try {
+            try {
+                listener.started(descriptor, new OperationStartEvent(currentOperation.getStartTime()));
+            } finally {
+                notificationLock.unlock();
+            }
             ProgressLogger progressLogger = createProgressLogger(currentOperation);
 
             Throwable failure = null;
@@ -204,7 +220,13 @@ public class DefaultBuildOperationExecutor implements BuildOperationExecutor, St
             LOGGER.debug("Completing Build operation '{}'", descriptor.getDisplayName());
 
             progressLogger.completed(context.status, context.failure != null);
-            listener.finished(descriptor, new OperationFinishEvent(currentOperation.getStartTime(), timeProvider.getCurrentTime(), context.failure, context.result));
+            try {
+                notificationLock.lock();
+                long finishTime = timeProvider.getCurrentTime();
+                listener.finished(descriptor, new OperationFinishEvent(currentOperation.getStartTime(), finishTime, context.failure, context.result));
+            } finally {
+                notificationLock.unlock();
+            }
 
             assertParentRunning("Parent operation (%2$s) completed before this operation (%1$s).", descriptor, parent);
 
@@ -272,8 +294,7 @@ public class DefaultBuildOperationExecutor implements BuildOperationExecutor, St
     }
 
     /**
-     * Artificially create a running root operation.
-     * Main use case is ProjectBuilder, useful for some of our test fixtures too.
+     * Artificially create a running root operation. Main use case is ProjectBuilder, useful for some of our test fixtures too.
      */
     protected void createRunningRootOperation(String displayName) {
         assert currentOperation.get() == null;
@@ -356,8 +377,7 @@ public class DefaultBuildOperationExecutor implements BuildOperationExecutor, St
     }
 
     /**
-     * Remembers the operation running on the executing thread at creation time to use
-     * it during execution on other threads.
+     * Remembers the operation running on the executing thread at creation time to use it during execution on other threads.
      */
     private class ParentPreservingQueueWorker<O extends BuildOperation> implements BuildOperationQueue.QueueWorker<O> {
         private DefaultBuildOperationState parent;
